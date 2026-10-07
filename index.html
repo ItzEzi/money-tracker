@@ -334,18 +334,19 @@ html.in-notes .topbar,html.in-notes #main,html.in-notes .mobile-nav,html.in-note
 #tube-view[hidden]{display:none}
 .tv-scrim{position:absolute;inset:0;background:#07050fb8;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .4s}
 #tube-view.open .tv-scrim{opacity:1}
-.tv-glass{position:fixed;transition:left .5s cubic-bezier(.2,.8,.2,1),top .5s cubic-bezier(.2,.8,.2,1),width .5s cubic-bezier(.2,.8,.2,1),height .5s cubic-bezier(.2,.8,.2,1)}
+.tv-glass{position:fixed;--tw:min(76vw,320px);width:var(--tw);left:calc((100vw - var(--tw))/2);top:calc(env(safe-area-inset-top) + 18px);height:calc(100dvh - 32px - env(safe-area-inset-top));transform-origin:0 0;will-change:transform;backface-visibility:hidden}
 .tv-lip{position:absolute;top:-6px;left:-5%;right:-5%;height:14px;border-radius:9px;border:2.5px solid #e9e2f78c;background:#2a2338cc;z-index:3}
-.tv-inner{position:absolute;inset:0;overflow:hidden;border:2.5px solid #e9e2f78c;border-top:0;border-radius:0 0 50% 50%/0 0 13% 13%;background:linear-gradient(90deg,#ffffff1c,#ffffff07 28%,#ffffff04 70%,#ffffff14);backdrop-filter:blur(12px) saturate(1.15);-webkit-backdrop-filter:blur(12px) saturate(1.15);box-shadow:inset 0 0 50px #ffffff0d}
-.tv-gloss{position:absolute;left:9%;width:7%;top:3%;bottom:12%;border-radius:40px;background:linear-gradient(180deg,#ffffff38,#ffffff0a);pointer-events:none;z-index:1}
+.tv-inner{position:absolute;inset:0;overflow:hidden;border:2.5px solid #e9e2f78c;border-top:0;border-radius:0 0 50% 50%/0 0 18% 18%;background:linear-gradient(90deg,#ffffff12,#ffffff05 20%,#ffffff03 80%,#ffffff0e);backdrop-filter:blur(12px) saturate(1.15);-webkit-backdrop-filter:blur(12px) saturate(1.15);box-shadow:inset 0 0 50px #ffffff0d}
+.tv-gloss{position:absolute;left:3.5%;width:3.5%;top:3%;bottom:14%;border-radius:40px;background:linear-gradient(180deg,#ffffff1f,#ffffff05);pointer-events:none;z-index:0}
 .tv-liquid{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(180deg,var(--tc),color-mix(in srgb,var(--tc) 70%,#000));opacity:.62;transition:height 1.2s cubic-bezier(.2,.8,.2,1) .25s}
 .tv-wave{position:absolute;left:0;top:-12px;width:200%;height:14px;color:var(--tc);animation:tvwave 3s linear infinite}
 .tv-wave svg{width:100%;height:100%;display:block}.tv-wave path{fill:var(--tc)}
 @keyframes tvwave{from{transform:translateX(0)}to{transform:translateX(-25%)}}
 .tv-b{position:absolute;bottom:8%;width:7px;height:7px;border-radius:50%;background:#ffffffb0;animation:tvbub 3.2s ease-in infinite;opacity:0}
 @keyframes tvbub{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-220px);opacity:0}}
-.tv-content{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 22px 30%;z-index:2;opacity:0;transition:opacity .25s}
-#tube-view.open .tv-content{opacity:1;transition:opacity .35s .35s}
+.tv-content{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 18px 34% 24px;z-index:2;opacity:0;transition:opacity .2s}
+#tube-view.open .tv-content{opacity:1;transition:opacity .3s .4s}
+.tv-content .pig-dbal{font-size:34px!important}.tv-content h2{font-size:22px!important}.tv-content .field-row{grid-template-columns:1fr}
 .tv-content .dialog-head{position:static;background:none;border:0;padding:6px 0 10px}
 .tv-content .dialog-body{padding:0}
 .tv-content,.tv-content h2,.tv-content h3,.tv-content label,.tv-content .pig-dbal{color:#fffffff0;text-shadow:0 1px 0 #ffffff1f,0 -1px 1px #0000008c}
@@ -573,15 +574,16 @@ document.addEventListener('click',e=>{const a=e.target.closest('.pig-art');if(!a
  if(pigTaps>=pigLimit){pigBusy=true;clearTimeout(tickleT);svg.classList.remove('tickle');svg.classList.add('mad');run.classList.add('flee');
   setTimeout(()=>{document.querySelectorAll('.pig-svg.mad').forEach(x=>x.classList.remove('mad'));document.querySelectorAll('.pig-run.flee').forEach(x=>x.classList.remove('flee'));pigBusy=false;pigTaps=0;pigLimit=30+Math.floor(Math.random()*71);},6200);return;}
  svg.classList.remove('tickle');void svg.getBoundingClientRect();svg.classList.add('tickle');clearTimeout(tickleT);tickleT=setTimeout(()=>svg.classList.remove('tickle'),1300);});
-function tvTarget(){const w=Math.min(window.innerWidth-28,520);return {left:(window.innerWidth-w)/2+'px',top:'calc(env(safe-area-inset-top) + 18px)',width:w+'px',height:'calc(100dvh - 30px - env(safe-area-inset-top))'};}
+function tvFlip(g,r){const t=g.getBoundingClientRect();return 'translate('+(r.left-t.left)+'px,'+(r.top-t.top)+'px) scale('+(r.width/t.width)+','+(r.height/t.height)+')';}
+const TV_EASE='transform .62s cubic-bezier(.22,1,.36,1)';
 function openTubeView(k,btn){const x=pillarOf(k),tv=$('tube-view'),g=$('tv-glass'),d=$('pig-dialog');tv.style.setProperty('--tc',x.color);
  $('tv-content').append(d.querySelector('.dialog-head'),d.querySelector('.dialog-body'));$('tv-liquid').style.transition='none';$('tv-liquid').style.height='0%';
- const r=btn.querySelector('.tube').getBoundingClientRect();tv.hidden=false;tv.classList.remove('open');g.style.transition='none';Object.assign(g.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
- void g.offsetWidth;g.style.transition='';$('tv-liquid').style.transition='';tv.classList.add('open');Object.assign(g.style,tvTarget());document.body.style.overflow='hidden';
- const bal=piggyBalances();setTimeout(()=>{$('tv-liquid').style.height=(Math.min(1,bal[k]/pg().goals[k])*86)+'%';},30);$('tv-content').scrollTop=0;}
-function closeTubeView(){const tv=$('tube-view'),g=$('tv-glass');if(tv.hidden)return;tv.classList.remove('open');$('tv-liquid').style.height='0%';const btn=document.querySelector('.tube-btn[data-pillar="'+pigK+'"] .tube');
- if(btn){const r=btn.getBoundingClientRect();Object.assign(g.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});}
- setTimeout(()=>{tv.hidden=true;const d=$('pig-dialog'),c=$('tv-content');d.append(c.querySelector('.dialog-head'),c.querySelector('.dialog-body'));document.body.style.overflow='';},480);}
+ tv.hidden=false;tv.classList.remove('open');g.style.transition='none';g.style.transform='none';const r=btn.querySelector('.tube').getBoundingClientRect();g.style.transform=tvFlip(g,r);
+ void g.offsetWidth;requestAnimationFrame(()=>{g.style.transition=TV_EASE;g.style.transform='none';$('tv-liquid').style.transition='';tv.classList.add('open');});document.body.style.overflow='hidden';
+ const bal=piggyBalances();setTimeout(()=>{$('tv-liquid').style.height=(Math.min(1,bal[k]/pg().goals[k])*86)+'%';},60);$('tv-content').scrollTop=0;}
+function closeTubeView(){const tv=$('tube-view'),g=$('tv-glass');if(tv.hidden)return;tv.classList.remove('open');$('tv-liquid').style.height='0%';const b=document.querySelector('.tube-btn[data-pillar="'+pigK+'"] .tube');
+ g.style.transition=TV_EASE;if(b){const cur=g.style.transform;g.style.transition='none';g.style.transform='none';const tr=tvFlip(g,b.getBoundingClientRect());g.style.transform=cur;void g.offsetWidth;g.style.transition=TV_EASE;g.style.transform=tr;}
+ setTimeout(()=>{tv.hidden=true;g.style.transition='none';g.style.transform='none';const d=$('pig-dialog'),c=$('tv-content');d.append(c.querySelector('.dialog-head'),c.querySelector('.dialog-body'));document.body.style.overflow='';},600);}
 document.addEventListener('click',e=>{if($('tube-view').hidden)return;if(e.target.closest('.tv-scrim')||e.target.closest('#tv-content [data-close="pig-dialog"]'))closeTubeView();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tube-view').hidden)closeTubeView();});
 function emptyPanel(){return '<div class="empty-panel"><div class="empty-symbol">'+icon('wallet')+'</div><h3>'+(S.loaded?'No entries yet':'Loading…')+'</h3><p></p><div class="empty-actions">'+(writable()?'<button class="btn" data-action="add">'+icon('plus')+'Add your first entry</button>':'')+(!S.demo&&S.mode==='local'&&S.tx.length===0?'<button class="text-btn" data-action="demo">Try sample data</button>':'')+'</div></div>';}
@@ -702,7 +704,7 @@ async function bootHub(){render();renderNotes();const fb=await waitFB(10000);if(
  S.mode='cloud';S.readOnly=false;S.error='';S.db=fb.db;subscribeCloud();subscribeNotes(fb.db);
  migrateLocal(fb).catch(e=>{console.error(e);toast('Could not upload your saved entries yet. Reopen the app to retry.');});}
 
-const APP_V='20261008-tubeview';
+const APP_V='20261008-tube2';
 function checkUpdate(){if(N.cur||document.querySelector('dialog[open]'))return;fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.v||j.v===APP_V)return;let seen=null;try{seen=sessionStorage.getItem('upd-'+j.v)}catch(e){}if(seen)return;try{sessionStorage.setItem('upd-'+j.v,'1')}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(j.v));}).catch(()=>{});}
 checkUpdate();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 bootHub();
