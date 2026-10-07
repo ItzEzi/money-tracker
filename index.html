@@ -53,26 +53,25 @@ html.locked body>*:not(#gate):not(.svg-defs){display:none!important}
 .hub-logo{display:block}
 /* Splash */
 #splash{display:none}
-html.splashing #splash{display:grid;position:fixed;inset:0;z-index:200;place-items:center;background:radial-gradient(ellipse at 50% 45%,#22183a 0%,var(--bg) 62%);overflow:hidden;cursor:pointer}
-.splash-inner{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;padding:0 24px}
-.splash-inner .hub-logo{width:64px;height:64px}
-.splash-title{font:600 clamp(26px,7vw,40px)/1.15 var(--display);letter-spacing:-1px;color:var(--text)}
-.splash-inner>*{opacity:0;transform:translateY(10px);animation:splash-in .7s cubic-bezier(.2,.7,.2,1) forwards}
-.splash-title{animation-delay:.15s}
-@keyframes splash-in{to{opacity:1;transform:none}}
-.warp{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:2px solid #8f6cff;box-shadow:0 0 40px #8850f6aa,inset 0 0 40px #5774ff88;opacity:0;pointer-events:none}
-#splash.go .splash-inner{animation:suck .75s cubic-bezier(.6,0,.9,.4) forwards}
-#splash.go .warp{animation:warp .9s cubic-bezier(.55,0,.85,.35) forwards}
-#splash.go .warp.w2{animation-delay:.08s}#splash.go .warp.w3{animation-delay:.16s}
-#splash.go{animation:splash-out .35s ease-in .7s forwards}
-@keyframes suck{0%{transform:scale(1);filter:blur(0);opacity:1}100%{transform:scale(6);filter:blur(10px);opacity:0}}
-@keyframes warp{0%{transform:scale(.2);opacity:0}25%{opacity:.9}100%{transform:scale(14);opacity:0}}
-@keyframes splash-out{to{opacity:0}}
+html.splashing #splash{display:block;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;z-index:200;background:radial-gradient(circle at 50% 50%,#22183a 0%,var(--bg) 60%);overflow:hidden;cursor:pointer;animation:splash-out .45s ease-in 2.25s forwards;-webkit-tap-highlight-color:transparent}
+.splash-stage{position:absolute;left:50%;top:50%;width:0;height:0}
+.splash-stage .hub-logo{position:absolute;width:76px;height:76px;left:-38px;top:-38px;opacity:0;animation:logo-zoom 2.5s cubic-bezier(.5,0,.75,0) forwards;will-change:transform,opacity}
+.splash-stage .hub-logo .dot{animation:dot-fade 2.5s linear forwards}
+.splash-title{position:absolute;top:62px;left:0;transform:translateX(-50%);white-space:nowrap;margin:0;font:600 clamp(26px,7vw,40px)/1.15 var(--display);letter-spacing:-1px;color:var(--text);opacity:0;animation:title-anim 2.5s ease forwards}
+.warp{position:absolute;width:76px;height:76px;left:-38px;top:-38px;border-radius:50%;border:2px solid #9a7bff;box-shadow:0 0 30px #8850f6aa,inset 0 0 30px #5774ff77;opacity:0;pointer-events:none;animation:warp .95s cubic-bezier(.5,0,.8,.3) 1.45s forwards}
+.warp.w2{animation-delay:1.57s}.warp.w3{animation-delay:1.69s}
+@keyframes logo-zoom{0%{opacity:0;transform:scale(.85)}22%{opacity:1;transform:scale(1)}58%{opacity:1;transform:scale(1)}92%{opacity:1}100%{opacity:0;transform:scale(26)}}
+@keyframes dot-fade{0%,62%{opacity:1}80%,100%{opacity:0}}
+@keyframes title-anim{0%,6%{opacity:0;transform:translate(-50%,10px)}30%{opacity:1;transform:translate(-50%,0)}58%{opacity:1;transform:translate(-50%,0);filter:blur(0)}78%,100%{opacity:0;transform:translate(-50%,40px) scale(1.25);filter:blur(8px)}}
+@keyframes warp{0%{transform:scale(.6);opacity:0}20%{opacity:.95}100%{transform:scale(18);opacity:0}}
+#splash.skip{animation:splash-out .3s ease-in forwards}
+html.splashing #portal{animation:portal-in .7s cubic-bezier(.2,.7,.2,1) 2.2s both}
+@keyframes splash-out{to{opacity:0;visibility:hidden}}
 /* Portal */
 #portal{display:none}
 html.at-portal #portal{display:block}
 html.at-portal .topbar,html.at-portal #main,html.at-portal .mobile-nav{display:none!important}
-html.portal-enter #portal{animation:portal-in .6s cubic-bezier(.2,.7,.2,1)}
+
 @keyframes portal-in{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
 .portal{max-width:900px;margin:0 auto;padding:calc(36px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
 .portal-head{display:flex;align-items:center;gap:14px;margin-bottom:28px}
@@ -95,7 +94,7 @@ html.portal-enter #portal{animation:portal-in .6s cubic-bezier(.2,.7,.2,1)}
 .back-btn{margin-left:-10px}
 .page-sub:empty,.eyebrow:empty,.stat-note:empty,.balance-note:empty,.budget-desc:empty,.budget-bottom:empty{display:none}
 .page-head h1{font-size:clamp(26px,3vw,32px)}
-@media (prefers-reduced-motion:reduce){#splash .splash-inner>*{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){html.splashing #splash{animation:splash-out .4s ease 1.2s forwards}.splash-stage .hub-logo,.splash-title,.splash-stage .hub-logo .dot{animation:none;opacity:1}.warp{display:none}html.splashing #portal{animation:none}}
 </style>
 <script>try{if(localStorage.getItem('mt-access')!=='09a202b0ccba6334c34fb09c15d558c827888b452ea99e54aedf2eb147683ece')document.documentElement.classList.add('locked')}catch(e){document.documentElement.classList.add('locked')}document.documentElement.classList.add('at-portal','splashing');</script>
 </head>
@@ -103,7 +102,7 @@ html.portal-enter #portal{animation:portal-in .6s cubic-bezier(.2,.7,.2,1)}
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="hubg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5774ff"/><stop offset=".55" stop-color="#8850f6"/><stop offset="1" stop-color="#ed91c0"/></linearGradient></defs></svg>
 <div id="gate"><form class="gate-card" id="gate-form" autocomplete="off"><div style="display:flex;justify-content:center"><svg class="hub-logo" width="52" height="52" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25" fill="none" stroke="url(#hubg)" stroke-width="6"/><circle cx="32" cy="32" r="13.5" fill="none" stroke="url(#hubg)" stroke-width="4" opacity=".65"/><circle cx="32" cy="32" r="4.5" fill="#fff"/></svg></div><h1>Hub</h1><p>Enter your access code.</p><label class="sr-only" for="gate-code">Access code</label><input id="gate-code" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="••••••" required><button class="btn" type="submit">Unlock</button><p class="gate-err" id="gate-err" role="alert"></p></form></div>
 <script>(function(){var H='09a202b0ccba6334c34fb09c15d558c827888b452ea99e54aedf2eb147683ece';var f=document.getElementById('gate-form');if(!document.documentElement.classList.contains('locked'))return;setTimeout(function(){document.getElementById('gate-code').focus()},50);f.addEventListener('submit',async function(e){e.preventDefault();var v=document.getElementById('gate-code').value.trim();var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('money-tracker:'+v));var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');if(hex===H){try{localStorage.setItem('mt-access',H)}catch(err){}document.documentElement.classList.remove('locked');document.dispatchEvent(new Event('hub:unlocked'));}else{document.getElementById('gate-err').textContent='That code isn\'t right. Try again.';document.getElementById('gate-code').select();}});})();</script>
-<div id="splash" aria-hidden="true"><div class="warp"></div><div class="warp w2"></div><div class="warp w3"></div><div class="splash-inner"><svg class="hub-logo" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25" fill="none" stroke="url(#hubg)" stroke-width="6"/><circle cx="32" cy="32" r="13.5" fill="none" stroke="url(#hubg)" stroke-width="4" opacity=".65"/><circle cx="32" cy="32" r="4.5" fill="#fff"/></svg><p class="splash-title">Welcome to the Hub.</p></div></div>
+<div id="splash" aria-hidden="true"><div class="splash-stage"><div class="warp"></div><div class="warp w2"></div><div class="warp w3"></div><svg class="hub-logo" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25" fill="none" stroke="url(#hubg)" stroke-width="6"/><circle cx="32" cy="32" r="13.5" fill="none" stroke="url(#hubg)" stroke-width="4" opacity=".65"/><circle class="dot" cx="32" cy="32" r="4.5" fill="#fff"/></svg><p class="splash-title">Welcome to the Hub.</p></div></div>
 <section id="portal" aria-label="Portal"><div class="portal"><header class="portal-head"><svg class="hub-logo" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25" fill="none" stroke="url(#hubg)" stroke-width="6"/><circle cx="32" cy="32" r="13.5" fill="none" stroke="url(#hubg)" stroke-width="4" opacity=".65"/><circle cx="32" cy="32" r="4.5" fill="#fff"/></svg><h1>Portal</h1></header><div class="tiles"><button class="tile live" id="open-tracker" type="button"><span class="tile-icon"><span data-icon="wallet"></span></span><span class="tile-go"><span data-icon="chevron-right"></span></span><span class="tile-name">Expense Tracker</span><span class="tile-meta" id="tracker-meta"></span></button><div class="tile soon" aria-disabled="true"><span class="tile-icon"><span data-icon="home"></span></span><span class="soon-tag">Coming soon</span><span class="tile-name">House Analyzer</span></div><div class="tile soon" aria-disabled="true"><span class="tile-icon"><span data-icon="meal"></span></span><span class="soon-tag">Coming soon</span><span class="tile-name">Nutrition &amp; Meal Prep</span></div><div class="tile soon" aria-disabled="true"><span class="tile-icon"><span data-icon="dumbbell"></span></span><span class="soon-tag">Coming soon</span><span class="tile-name">Workout Routines</span></div><div class="tile soon" aria-disabled="true"><span class="tile-icon"><span data-icon="note"></span></span><span class="soon-tag">Coming soon</span><span class="tile-name">Notes</span></div></div></div></section>
 <a href="#main" class="skip">Skip to content</a>
 <header class="topbar">
@@ -222,11 +221,10 @@ $('open-tracker').addEventListener('click',openTracker);
 $('to-portal').addEventListener('click',toPortal);
 let splashDone=false;
 function runSplash(){if(splashDone)return;splashDone=true;const sp=$('splash'),root=document.documentElement;trackerMeta();
- const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const finish=()=>{root.classList.remove('splashing');root.classList.add('portal-enter');setTimeout(()=>root.classList.remove('portal-enter'),700);};
- if(reduce){setTimeout(finish,900);return;}
- let t1=setTimeout(()=>sp.classList.add('go'),1500),t2=setTimeout(finish,1050+1500);
- sp.addEventListener('click',()=>{clearTimeout(t1);clearTimeout(t2);if(!sp.classList.contains('go'))sp.classList.add('go');setTimeout(finish,1050);},{once:true});}
+ let ended=false;const finish=()=>{if(ended)return;ended=true;root.classList.remove('splashing');};
+ sp.addEventListener('animationend',e=>{if(e.target===sp&&e.animationName==='splash-out')finish();});
+ sp.addEventListener('click',()=>sp.classList.add('skip'),{once:true});
+ setTimeout(finish,3600);}
 document.addEventListener('hub:unlocked',runSplash);
 if(!document.documentElement.classList.contains('locked'))runSplash();
 boot();
