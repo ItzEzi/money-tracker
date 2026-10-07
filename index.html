@@ -23,8 +23,21 @@ dialog{color:var(--text);border:1px solid #534365;background:#1b1626;border-radi
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media (forced-colors:active){.btn,.card,.chip,.period{border:1px solid CanvasText}.meter span,.cat-track span{background:Highlight}.brand-mark{border-color:CanvasText}}
 </style>
+<style>
+html.locked body>*:not(#gate){display:none!important}
+#gate{display:none}html.locked #gate{display:grid;min-height:100dvh;place-items:center;padding:24px 16px}
+.gate-card{width:100%;max-width:380px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(125deg,#1c1827,#17141f);padding:32px 26px;text-align:center}
+.gate-card h1{font-size:26px;margin:14px 0 6px}.gate-card p{color:var(--muted);font-size:14px}
+.gate-card .brand-mark{margin:0 auto}
+.gate-card input{margin-top:22px;text-align:center;font:600 28px var(--display);letter-spacing:8px}
+.gate-card .btn{margin-top:14px;width:100%}
+.gate-err{color:var(--danger);font-size:14px;margin-top:12px;min-height:20px}
+</style>
+<script>try{if(localStorage.getItem('mt-access')!=='3d35b5844735556bf036ff60f5a71ad9d716bc34d5db6fd6eb533b0d7f427f44')document.documentElement.classList.add('locked')}catch(e){document.documentElement.classList.add('locked')}</script>
 </head>
 <body>
+<div id="gate"><form class="gate-card" id="gate-form" autocomplete="off"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><h1>Money Tracker</h1><p>Enter your access code to open the tracker on this device.</p><label class="sr-only" for="gate-code">Access code</label><input id="gate-code" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="••••••" required><button class="btn" type="submit">Unlock</button><p class="gate-err" id="gate-err" role="alert"></p></form></div>
+<script>(function(){var H='3d35b5844735556bf036ff60f5a71ad9d716bc34d5db6fd6eb533b0d7f427f44';var f=document.getElementById('gate-form');if(!document.documentElement.classList.contains('locked'))return;setTimeout(function(){document.getElementById('gate-code').focus()},50);f.addEventListener('submit',async function(e){e.preventDefault();var v=document.getElementById('gate-code').value.trim();var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('money-tracker:'+v));var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');if(hex===H){try{localStorage.setItem('mt-access',H)}catch(err){}document.documentElement.classList.remove('locked');}else{document.getElementById('gate-err').textContent='That code isn\'t right. Try again.';document.getElementById('gate-code').select();}});})();</script>
 <a href="#main" class="skip">Skip to content</a>
 <header class="topbar">
 <a class="brand" href="#overview" aria-label="Money Tracker overview"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Money Tracker</a>
