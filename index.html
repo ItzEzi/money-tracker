@@ -453,7 +453,7 @@ function renderPiggy(){const cur=curCyc(),past=S.month<cur,upTo=past?S.month:cur
  +'<div class="card tz-card"><div><p class="card-label">Tzedakah to give'+(past?' · end of '+esc(monthLabel(S.month)):'')+'</p><p class="tz-amt num">'+money(Math.max(0,bal.charity))+'</p><p class="tz-sub">10% of income · '+money(tzOwedAll)+' total, '+money(tzGiven)+' given</p></div><button type="button" class="btn tz-btn" data-pillar="charity"'+(writable()?'':' disabled')+'>Mark as given</button></div>'
  +'<div class="card pig-flow"><div class="card-head" style="margin-bottom:0"><h2>'+esc(monthLabel(S.month))+'</h2></div>'+flow+'</div>'
  +'<div class="card pig-pillars"><div class="card-head"><div><h2>Funds</h2><p>Each test tube fills up to its goal'+(past?' · as of '+esc(monthLabel(S.month)):'')+'</p></div><button class="text-btn" data-action="pig-split"'+(writable()?'':' disabled')+'>Adjust split</button></div><div class="tubes">'
- +all.map(x=>'<button type="button" class="tube-btn" data-pillar="'+x.k+'" aria-label="'+esc(x.name)+', '+esc(money(bal[x.k]))+' of '+esc(money(goals[x.k]))+'">'+tubeSVG(x,bal[x.k],goals[x.k])+'<span class="tube-name">'+esc(x.name)+'</span><span class="tube-amt num">'+money(bal[x.k])+'</span><span class="tube-pct">of '+kfmt(goals[x.k])+' · '+Math.floor(Math.min(100,bal[x.k]/goals[x.k]*100))+'%</span></button>').join('')+'</div></div>'
+ +all.map(x=>'<button type="button" class="tube-btn" data-pillar="'+x.k+'" aria-label="'+esc(x.name)+', '+esc(money(bal[x.k]))+' of '+esc(money(goals[x.k]))+'">'+tubeSVG(x,bal[x.k],goals[x.k])+'<span class="tube-name">'+esc(x.name)+'</span><span class="tube-amt num">'+money(bal[x.k])+'</span><span class="tube-pct">'+Math.floor(Math.min(100,bal[x.k]/goals[x.k]*100))+'% of '+kfmt(goals[x.k])+'</span></button>').join('')+'</div></div>'
  +growth;
  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('#piggy .liquid').forEach(g=>g.style.transform='translateY('+g.dataset.y+'px)')));}
 let pigK=null,pigDir='out';
@@ -610,7 +610,7 @@ async function bootHub(){render();renderNotes();const fb=await waitFB(10000);if(
  S.mode='cloud';S.readOnly=false;S.error='';S.db=fb.db;subscribeCloud();subscribeNotes(fb.db);
  migrateLocal(fb).catch(e=>{console.error(e);toast('Could not upload your saved entries yet. Reopen the app to retry.');});}
 
-const APP_V='20261008-budtally';
+const APP_V='20261008-pct';
 function checkUpdate(){if(N.cur||document.querySelector('dialog[open]'))return;fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.v||j.v===APP_V)return;let seen=null;try{seen=sessionStorage.getItem('upd-'+j.v)}catch(e){}if(seen)return;try{sessionStorage.setItem('upd-'+j.v,'1')}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(j.v));}).catch(()=>{});}
 checkUpdate();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 bootHub();
