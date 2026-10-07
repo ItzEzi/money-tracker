@@ -345,7 +345,8 @@ html.in-notes .topbar,html.in-notes #main,html.in-notes .mobile-nav,html.in-note
 .tv-b{position:absolute;bottom:8%;width:7px;height:7px;border-radius:50%;background:#ffffffb0;animation:tvbub 3.2s ease-in infinite;opacity:0}
 @keyframes tvbub{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-220px);opacity:0}}
 .tv-content{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 18px 34% 24px;z-index:2;opacity:0;transition:opacity .2s}
-#tube-view.open .tv-content{opacity:1;transition:opacity .3s .4s}
+#tube-view.open .tv-content{opacity:1;transition:opacity .32s .14s}
+.tv-glass{transition:opacity .2s}#tube-view.closing .tv-glass{opacity:0;transition:transform .62s cubic-bezier(.22,1,.36,1),opacity .22s .42s}#tube-view.closing .tv-content{transition:opacity .1s}
 .tv-content .pig-dbal{font-size:34px!important}.tv-content h2{font-size:22px!important}.tv-content .field-row{grid-template-columns:1fr}
 .tv-content .dialog-head{position:static;background:none;border:0;padding:6px 0 10px}
 .tv-content .dialog-body{padding:0}
@@ -576,14 +577,19 @@ document.addEventListener('click',e=>{const a=e.target.closest('.pig-art');if(!a
  svg.classList.remove('tickle');void svg.getBoundingClientRect();svg.classList.add('tickle');clearTimeout(tickleT);tickleT=setTimeout(()=>svg.classList.remove('tickle'),1300);});
 function tvFlip(g,r){const t=g.getBoundingClientRect();return 'translate('+(r.left-t.left)+'px,'+(r.top-t.top)+'px) scale('+(r.width/t.width)+','+(r.height/t.height)+')';}
 const TV_EASE='transform .62s cubic-bezier(.22,1,.36,1)';
-function openTubeView(k,btn){const x=pillarOf(k),tv=$('tube-view'),g=$('tv-glass'),d=$('pig-dialog');tv.style.setProperty('--tc',x.color);
- $('tv-content').append(d.querySelector('.dialog-head'),d.querySelector('.dialog-body'));$('tv-liquid').style.transition='none';$('tv-liquid').style.height='0%';
- tv.hidden=false;tv.classList.remove('open');g.style.transition='none';g.style.transform='none';const r=btn.querySelector('.tube').getBoundingClientRect();g.style.transform=tvFlip(g,r);
- void g.offsetWidth;requestAnimationFrame(()=>{g.style.transition=TV_EASE;g.style.transform='none';$('tv-liquid').style.transition='';tv.classList.add('open');});document.body.style.overflow='hidden';
+let tvSrc=null,tvTimer=null;
+function openTubeView(k,btn){clearTimeout(tvTimer);const x=pillarOf(k),tv=$('tube-view'),g=$('tv-glass'),d=$('pig-dialog');tv.style.setProperty('--tc',x.color);
+ if(d.querySelector('.dialog-head'))$('tv-content').append(d.querySelector('.dialog-head'),d.querySelector('.dialog-body'));$('tv-liquid').style.transition='none';$('tv-liquid').style.height='0%';
+ tv.hidden=false;tv.classList.remove('open','closing');g.style.transition='none';g.style.transform='none';const src=btn.querySelector('.tube');const r=src.getBoundingClientRect();g.style.transform=tvFlip(g,r);
+ void g.offsetWidth;src.style.visibility='hidden';tvSrc=src;
+ requestAnimationFrame(()=>{g.style.transition=TV_EASE;g.style.transform='none';$('tv-liquid').style.transition='';tv.classList.add('open');});document.body.style.overflow='hidden';
  const bal=piggyBalances();setTimeout(()=>{$('tv-liquid').style.height=(Math.min(1,bal[k]/pg().goals[k])*86)+'%';},60);$('tv-content').scrollTop=0;}
-function closeTubeView(){const tv=$('tube-view'),g=$('tv-glass');if(tv.hidden)return;tv.classList.remove('open');$('tv-liquid').style.height='0%';const b=document.querySelector('.tube-btn[data-pillar="'+pigK+'"] .tube');
- g.style.transition=TV_EASE;if(b){const cur=g.style.transform;g.style.transition='none';g.style.transform='none';const tr=tvFlip(g,b.getBoundingClientRect());g.style.transform=cur;void g.offsetWidth;g.style.transition=TV_EASE;g.style.transform=tr;}
- setTimeout(()=>{tv.hidden=true;g.style.transition='none';g.style.transform='none';const d=$('pig-dialog'),c=$('tv-content');d.append(c.querySelector('.dialog-head'),c.querySelector('.dialog-body'));document.body.style.overflow='';},600);}
+function closeTubeView(){const tv=$('tube-view'),g=$('tv-glass');if(tv.hidden||tv.classList.contains('closing'))return;
+ const b=document.querySelector('.tube-btn[data-pillar="'+pigK+'"] .tube');if(tvSrc&&tvSrc!==b)tvSrc.style.visibility='';if(b)b.style.visibility='';tvSrc=null;
+ const cur=getComputedStyle(g).transform;g.style.transition='none';g.style.transform='none';const tr=b?tvFlip(g,b.getBoundingClientRect()):'scale(.2)';g.style.transform=cur==='none'?'none':cur;void g.offsetWidth;
+ tv.classList.remove('open');tv.classList.add('closing');g.style.transition='';requestAnimationFrame(()=>{g.style.transform=tr;});$('tv-liquid').style.height='0%';
+ const done=()=>{clearTimeout(tvTimer);tv.hidden=true;tv.classList.remove('closing');g.style.transition='none';g.style.transform='none';const d=$('pig-dialog'),c=$('tv-content');if(c.querySelector('.dialog-head'))d.append(c.querySelector('.dialog-head'),c.querySelector('.dialog-body'));document.body.style.overflow='';};
+ tvTimer=setTimeout(done,720);}
 document.addEventListener('click',e=>{if($('tube-view').hidden)return;if(e.target.closest('.tv-scrim')||e.target.closest('#tv-content [data-close="pig-dialog"]'))closeTubeView();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tube-view').hidden)closeTubeView();});
 function emptyPanel(){return '<div class="empty-panel"><div class="empty-symbol">'+icon('wallet')+'</div><h3>'+(S.loaded?'No entries yet':'Loading…')+'</h3><p></p><div class="empty-actions">'+(writable()?'<button class="btn" data-action="add">'+icon('plus')+'Add your first entry</button>':'')+(!S.demo&&S.mode==='local'&&S.tx.length===0?'<button class="text-btn" data-action="demo">Try sample data</button>':'')+'</div></div>';}
@@ -704,7 +710,7 @@ async function bootHub(){render();renderNotes();const fb=await waitFB(10000);if(
  S.mode='cloud';S.readOnly=false;S.error='';S.db=fb.db;subscribeCloud();subscribeNotes(fb.db);
  migrateLocal(fb).catch(e=>{console.error(e);toast('Could not upload your saved entries yet. Reopen the app to retry.');});}
 
-const APP_V='20261008-tube2';
+const APP_V='20261008-tube3';
 function checkUpdate(){if(N.cur||document.querySelector('dialog[open]'))return;fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.v||j.v===APP_V)return;let seen=null;try{seen=sessionStorage.getItem('upd-'+j.v)}catch(e){}if(seen)return;try{sessionStorage.setItem('upd-'+j.v,'1')}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(j.v));}).catch(()=>{});}
 checkUpdate();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 bootHub();
