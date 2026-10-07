@@ -513,6 +513,10 @@ async function bootHub(){render();renderNotes();const fb=await waitFB(10000);if(
   if(!fb.user)await new Promise(r=>document.addEventListener('hub:unlocked',r,{once:true}));user=fb.user;if(!user){loadLocalNotes();return boot();}}
  S.mode='cloud';S.readOnly=false;S.error='';S.db=fb.db;subscribeCloud();subscribeNotes(fb.db);
  migrateLocal(fb).catch(e=>{console.error(e);toast('Could not upload your saved entries yet. Reopen the app to retry.');});}
+
+const APP_V='20261007-piggy';
+function checkUpdate(){if(N.cur||document.querySelector('dialog[open]'))return;fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.v||j.v===APP_V)return;let seen=null;try{seen=sessionStorage.getItem('upd-'+j.v)}catch(e){}if(seen)return;try{sessionStorage.setItem('upd-'+j.v,'1')}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(j.v));}).catch(()=>{});}
+checkUpdate();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 bootHub();
 })();
 </script>
