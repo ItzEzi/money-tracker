@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Flip Analyzer</title>
+<style>
+  /* Layout concept: two-mode deal desk — a Scanner that triages candidates, an Analyzing Machine that runs the full 70% eval and awards the grade. */
+  :root{
+    --bg:#f5f7f9; --surface:#ffffff; --surface-2:#eef1f5; --surface-3:#e6eaf0;
+    --fg:#111821; --muted:#5a6675; --faint:#8a95a3; --border:#dce1e8; --border-2:#c9d1db;
+    --accent:#2b4a7a; --accent-soft:#e7edf6; --accent-fg:#1f3a63;
+    --green:#15924f; --green-bg:#e4f5ea; --green-br:#9fd9b4;
+    --amber:#bf7a06; --amber-bg:#fbf0d9; --amber-br:#ecc878;
+    --red:#cf3a32; --red-bg:#fce6e4; --red-br:#eca9a4;
+    --gold:#8a6400; --gold-2:#c99a24; --gold-bg:#fbf1cf; --gold-br:#d9b64a;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+    --radius:14px; --radius-sm:9px;
+    --disp:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+    --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0d1218; --surface:#151c25; --surface-2:#1c2530; --surface-3:#232e3b;
+    --fg:#e9eef4; --muted:#9aa6b4; --faint:#6b7786; --border:#283340; --border-2:#35424f;
+    --accent:#6f9ceb; --accent-soft:#1a2740; --accent-fg:#a9c4f2;
+    --green:#3fc27e; --green-bg:#122a1e; --green-br:#2b6243;
+    --amber:#e5a93a; --amber-bg:#2e2410; --amber-br:#6b5122;
+    --red:#ef6459; --red-bg:#2e1715; --red-br:#6e322c;
+    --gold:#e3c15f; --gold-2:#d9b64a; --gold-bg:#2a230f; --gold-br:#6e5a20;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0d1218; --surface:#151c25; --surface-2:#1c2530; --surface-3:#232e3b;
+    --fg:#e9eef4; --muted:#9aa6b4; --faint:#6b7786; --border:#283340; --border-2:#35424f;
+    --accent:#6f9ceb; --accent-soft:#1a2740; --accent-fg:#a9c4f2;
+    --green:#3fc27e; --green-bg:#122a1e; --green-br:#2b6243;
+    --amber:#e5a93a; --amber-bg:#2e2410; --amber-br:#6b5122;
+    --red:#ef6459; --red-bg:#2e1715; --red-br:#6e322c;
+    --gold:#e3c15f; --gold-2:#d9b64a; --gold-bg:#2a230f; --gold-br:#6e5a20;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5;
+    -webkit-font-smoothing:antialiased;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:0 56px}
+  h1,h2,h3{font-family:var(--disp);font-weight:700;line-height:1.1;margin:0;text-wrap:balance}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  a{color:var(--accent)}
+  button{font-family:inherit}
+  label{display:block;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted);
+    text-transform:uppercase;margin-bottom:5px}
+  input[type=text],input[type=number],input[type=url]{
+    width:100%;padding:10px 12px;border:1px solid var(--border-2);border-radius:var(--radius-sm);
+    background:var(--surface);color:var(--fg);font-family:var(--body);font-size:15px}
+  input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  input::placeholder{color:var(--faint)}
+
+  /* header */
+  header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .hrow{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--gold-2)));
+    display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:800;font-size:18px;flex:none}
+  .brand h1{font-size:19px;letter-spacing:-.01em}
+  .brand .sub{font-size:11.5px;color:var(--muted);font-family:var(--body);font-weight:500;letter-spacing:.02em}
+  .spacer{flex:1}
+  .iconbtn{background:var(--surface);border:1px solid var(--border-2);color:var(--fg);width:38px;height:38px;
+    border-radius:9px;cursor:pointer;font-size:16px;display:grid;place-items:center}
+  .iconbtn:hover{background:var(--surface-2)}
+
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin:18px 0 20px;background:var(--surface-2);padding:5px;border-radius:12px;
+    border:1px solid var(--border);max-width:460px}
+  .tab{flex:1;padding:9px 12px;border:none;background:transparent;color:var(--muted);font-weight:600;font-size:14px;
+    border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .tab[aria-selected=true]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+  .tab .dot{font-size:15px}
+
+  /* cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card-pad{padding:18px}
+  .card h2{font-size:16px;margin-bottom:3px}
+  .card .hint{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-fg)}
+
+  /* analyzer grid */
+  .analyzer{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media (max-width:860px){.analyzer{grid-template-columns:1fr}}
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .prefix{position:relative}
+  .prefix span{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);font-size:14px}
+  .prefix input{padding-left:26px}
+  .suffix-pct span{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);font-size:14px}
+
+  /* rehab chips */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px}
+  .chip{padding:7px 11px;border:1px solid var(--border-2);background:var(--surface);border-radius:999px;font-size:13px;
+    cursor:pointer;color:var(--fg);font-weight:500}
+  .chip small{color:var(--faint);font-family:var(--mono);font-size:11px}
+  .chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+
+  /* comps */
+  .comp-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  .comp-row .del{width:36px;height:40px;border:1px solid var(--border-2);background:var(--surface);border-radius:8px;
+    cursor:pointer;color:var(--muted);font-size:15px}
+  .comp-row .del:hover{color:var(--red);border-color:var(--red-br)}
+  .addbtn{margin-top:2px;background:var(--surface-2);border:1px dashed var(--border-2);color:var(--accent-fg);
+    padding:8px 12px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;width:100%}
+  .addbtn:hover{background:var(--accent-soft)}
+  .arv-readout{margin-top:10px;padding:10px 12px;background:var(--surface-2);border-radius:9px;font-size:13px;color:var(--muted);
+    display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .arv-readout b{color:var(--fg);font-family:var(--mono);font-size:16px}
+
+  .btn-primary{width:100%;margin-top:4px;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:10px;
+    font-weight:700;font-size:15px;cursor:pointer;font-family:var(--disp)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-ghost{background:var(--surface);border:1px solid var(--border-2);color:var(--fg);padding:10px 14px;border-radius:9px;
+    font-weight:600;font-size:13.5px;cursor:pointer}
+  .btn-ghost:hover{background:var(--surface-2)}
+
+  /* verdict */
+  .verdict{overflow:hidden}
+  .grade-banner{padding:18px;display:flex;align-items:center;gap:15px;border-bottom:1px solid var(--border)}
+  .grade-pill{flex:none;min-width:92px;padding:11px 8px;border-radius:12px;text-align:center;font-family:var(--disp);
+    font-weight:800;border:1.5px solid}
+  .grade-pill .g{font-size:21px;line-height:1;display:block}
+  .grade-pill .t{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:4px;opacity:.85}
+  .g-green{background:var(--green-bg);color:var(--green);border-color:var(--green-br)}
+  .g-yellow{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-br)}
+  .g-red{background:var(--red-bg);color:var(--red);border-color:var(--red-br)}
+  .g-gold{background:linear-gradient(135deg,var(--gold-bg),color-mix(in srgb,var(--gold-bg) 55%,var(--gold-2)));
+    color:var(--gold);border-color:var(--gold-br);box-shadow:0 0 0 1px var(--gold-br),0 6px 18px color-mix(in srgb,var(--gold-2) 40%,transparent)}
+  .grade-msg{min-width:0}
+  .grade-msg h3{font-size:17px;margin-bottom:3px}
+  .grade-msg p{margin:0;font-size:13px;color:var(--muted)}
+
+  .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border)}
+  .tile{background:var(--surface);padding:14px}
+  .tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:21px;font-weight:600;margin-top:3px;letter-spacing:-.01em}
+  .tile .v.pos{color:var(--green)} .tile .v.neg{color:var(--red)}
+  .tile .note{font-size:11px;color:var(--faint);margin-top:1px}
+
+  .breakdown{padding:16px 18px}
+  .breakdown h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 10px}
+  .ln{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13.5px;border-bottom:1px dashed var(--border)}
+  .ln:last-child{border-bottom:none}
+  .ln span:first-child{color:var(--muted)}
+  .ln .num{font-weight:500}
+  .ln.total{font-weight:700;font-size:14.5px}.ln.total span:first-child{color:var(--fg)}
+  .rule-check{margin:14px 18px 18px;padding:12px 14px;border-radius:10px;font-size:13.5px;display:flex;align-items:center;gap:10px}
+  .rule-check.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-br)}
+  .rule-check.bad{background:var(--red-bg);color:var(--red);border:1px solid var(--red-br)}
+  .rule-check .mark{font-size:18px;flex:none}
+  .rule-check b{font-family:var(--mono)}
+  .save-row{padding:0 18px 18px;display:flex;gap:8px;flex-wrap:wrap}
+
+  .empty{padding:40px 22px;text-align:center;color:var(--muted)}
+  .empty .big{font-size:30px;margin-bottom:8px}
+  .empty h3{font-size:16px;color:var(--fg);margin-bottom:5px}
+  .empty p{margin:0 auto;max-width:300px;font-size:13.5px}
+
+  /* scanner */
+  .scan-hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .scan-hero .txt{min-width:0;flex:1}
+  .phase2{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold-br);padding:3px 8px;border-radius:999px}
+  .btn-scan{background:var(--surface-2);border:1px dashed var(--border-2);color:var(--muted);padding:13px 18px;border-radius:11px;
+    font-weight:700;font-size:14px;cursor:not-allowed;font-family:var(--disp);display:flex;align-items:center;gap:9px;flex:none}
+  .quick-add{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:9px;align-items:end}
+  @media (max-width:760px){.quick-add{grid-template-columns:1fr 1fr}.quick-add .wide{grid-column:1/-1}.quick-add .qbtn-cell{grid-column:1/-1}}
+  .quick-add .qbtn{width:100%;height:42px}
+  .cand-list{display:flex;flex-direction:column;gap:10px}
+  .cand{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:12px;border:1px solid var(--border);
+    background:var(--surface);box-shadow:var(--shadow);border-left-width:5px}
+  .cand.green{border-left-color:var(--green)} .cand.yellow{border-left-color:var(--amber)}
+  .cand.red{border-left-color:var(--red)} .cand.gold{border-left-color:var(--gold-2)}
+  .cand .badge{flex:none;width:58px;text-align:center;font-family:var(--disp);font-weight:800;font-size:12px;
+    padding:7px 4px;border-radius:9px;text-transform:uppercase;letter-spacing:.03em;border:1.5px solid}
+  .cand .info{flex:1;min-width:0}
+  .cand .info .name{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cand .info .meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+  .cand .info .meta .num{color:var(--fg)}
+  .cand .acts{display:flex;gap:6px;flex:none}
+  .cand .acts button{border:1px solid var(--border-2);background:var(--surface);border-radius:8px;cursor:pointer;
+    color:var(--muted);padding:7px 10px;font-size:12.5px;font-weight:600}
+  .cand .acts .go{color:var(--accent-fg);border-color:var(--accent);background:var(--accent-soft)}
+  .cand .acts button:hover{filter:brightness(.97)}
+  @media (max-width:600px){.cand{flex-wrap:wrap}.cand .acts{width:100%;justify-content:flex-end}}
+  .tag-ex{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);
+    border:1px solid var(--border-2);border-radius:5px;padding:1px 5px;margin-left:7px;vertical-align:middle}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);
+    padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;
+    transition:all .25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .footnote{margin-top:22px;font-size:11.5px;color:var(--faint);text-align:center;line-height:1.6}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+<header>
+  <div class="hrow">
+    <div class="brand">
+      <div class="logo">F</div>
+      <div>
+        <h1>Flip Analyzer</h1>
+        <div class="sub">70% rule · comps · deal grading</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="themeBtn" title="Toggle light / dark" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-scan" role="tab" aria-selected="false" aria-controls="panel-scan">
+      <span class="dot">🔎</span> Scanner / Shortlist</button>
+    <button class="tab" id="tab-analyze" role="tab" aria-selected="true" aria-controls="panel-analyze">
+      <span class="dot">⚙️</span> Analyzing Machine</button>
+  </div>
+
+  <!-- ============ ANALYZING MACHINE ============ -->
+  <section id="panel-analyze" role="tabpanel" aria-labelledby="tab-analyze">
+    <div class="analyzer">
+      <!-- inputs -->
+      <div class="card card-pad">
+        <div class="eyebrow">The deal</div>
+        <h2 style="margin:4px 0 2px">Enter the house</h2>
+        <p class="hint">Paste the listing link for reference, then fill in the numbers. Everything recalculates live.</p>
+
+        <div class="field">
+          <label for="f-link">Listing link (Zillow, Redfin, etc.)</label>
+          <input type="url" id="f-link" placeholder="https://www.zillow.com/homedetails/...">
+        </div>
+        <div class="field">
+          <label for="f-addr">Address / nickname</label>
+          <input type="text" id="f-addr" placeholder="e.g. 142 Maple St">
+        </div>
+        <div class="two field">
+          <div>
+            <label for="f-price">Asking / purchase price</label>
+            <div class="prefix"><span>$</span><input type="number" id="f-price" min="0" step="1000" placeholder="0"></div>
+          </div>
+          <div>
+            <label for="f-sqft">Living area (sq ft)</label>
+            <input type="number" id="f-sqft" min="0" step="10" placeholder="0">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Rehab / renovation estimate</label>
+          <div class="chips" id="rehabChips">
+            <button class="chip" data-psf="20" type="button">Cosmetic <small>$20/ft</small></button>
+            <button class="chip" data-psf="40" type="button">Moderate <small>$40/ft</small></button>
+            <button class="chip" data-psf="75" type="button">Full gut-lite <small>$75/ft</small></button>
+            <button class="chip" data-psf="110" type="button">Heavy gut <small>$110/ft</small></button>
+          </div>
+          <div class="prefix"><span>$</span><input type="number" id="f-rehab" min="0" step="500" placeholder="0"></div>
+          <div class="note" style="font-size:11.5px;color:var(--faint);margin-top:5px">Pick a level to auto-fill from sq ft, or type your own figure.</div>
+        </div>
+
+        <div class="field">
+          <label>Comparable sold homes <span style="text-transform:none;font-weight:500;color:var(--faint)">— sets the ARV</span></label>
+          <div id="comps"></div>
+          <button class="addbtn" id="addComp" type="button">+ Add a sold comp</button>
+          <div class="arv-readout">
+            <span>After-Repair Value (ARV) from comps</span>
+            <b class="num" id="arvFromComps">$0</b>
+          </div>
+        </div>
+
+        <div class="two field">
+          <div>
+            <label for="f-arv">ARV override (optional)</label>
+            <div class="prefix"><span>$</span><input type="number" id="f-arv" min="0" step="1000" placeholder="auto"></div>
+          </div>
+          <div>
+            <label for="f-rule">Rule percentage</label>
+            <div class="prefix suffix-pct"><input type="number" id="f-rule" min="1" max="100" step="1" value="70" style="padding-left:12px"><span>%</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-costs">Holding, closing &amp; selling costs (% of ARV)</label>
+          <div class="prefix suffix-pct"><input type="number" id="f-costs" min="0" max="40" step="0.5" value="10" style="padding-left:12px"><span>%</span></div>
+        </div>
+        <button class="btn-primary" id="resetBtn" type="button" style="background:var(--surface-2);color:var(--muted);font-size:13px;padding:10px">Clear &amp; start a new house</button>
+      </div>
+
+      <!-- results -->
+      <div id="results"></div>
+    </div>
+  </section>
+
+  <!-- ============ SCANNER / SHORTLIST ============ -->
+  <section id="panel-scan" role="tabpanel" aria-labelledby="tab-scan" hidden>
+    <div class="card card-pad" style="margin-bottom:18px">
+      <div class="scan-hero">
+        <div class="txt">
+          <div class="eyebrow">Area scan</div>
+          <h2 style="margin:4px 0 4px">Find candidate flips in a city</h2>
+          <p class="hint" style="margin:0">Auto-pulling live listings and sold comps for a whole city needs the real-estate data feed — that's <b>Phase 2</b>. For now, build your shortlist by hand below: drop in anything you spot and get an instant green / yellow / red read before you commit to a full analysis.</p>
+        </div>
+        <button class="btn-scan" id="scanBtn" type="button" title="Enabled in Phase 2 with the data API">
+          <span>🛰️</span> Scan a city
+          <span class="phase2" style="margin-left:4px">Phase 2</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:18px">
+      <div class="eyebrow">Quick triage</div>
+      <h2 style="margin:4px 0 2px">Add a candidate</h2>
+      <p class="hint">A fast read — no full eval. These can score green, yellow or red. <b>Gold is earned only in the Analyzing Machine</b>, after a full comp-backed evaluation.</p>
+      <div class="quick-add">
+        <div class="wide">
+          <label for="q-name">Address / link</label>
+          <input type="text" id="q-name" placeholder="214 Birch Ave — or paste a link">
+        </div>
+        <div>
+          <label for="q-price">Price</label>
+          <div class="prefix"><span>$</span><input type="number" id="q-price" min="0" step="1000" placeholder="0"></div>
+        </div>
+        <div>
+          <label for="q-sqft">Sq ft</label>
+          <input type="number" id="q-sqft" min="0" step="10" placeholder="0">
+        </div>
+        <div>
+          <label for="q-psf">Area resale $/ft</label>
+          <input type="number" id="q-psf" min="0" step="5" placeholder="0">
+        </div>
+        <div class="qbtn-cell">
+          <label>&nbsp;</label>
+          <button class="btn-primary qbtn" id="addCand" type="button" style="margin:0;padding:0">Add</button>
+        </div>
+      </div>
+      <div class="chips" id="qRehabChips" style="margin-top:12px">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;align-self:center;margin-right:2px">Rehab:</span>
+        <button class="chip" data-psf="20" type="button">Cosmetic</button>
+        <button class="chip" data-psf="40" type="button" aria-pressed="true">Moderate</button>
+        <button class="chip" data-psf="75" type="button">Full</button>
+        <button class="chip" data-psf="110" type="button">Heavy</button>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div class="eyebrow">Your shortlist</div>
+          <h2 style="margin:4px 0 0">Candidates <span id="candCount" class="num" style="color:var(--muted);font-weight:500;font-size:15px"></span></h2>
+        </div>
+        <button class="btn-ghost" id="clearCands" type="button">Clear list</button>
+      </div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--gold-2)"></i> Gold — jump on it</span>
+        <span><i class="sw" style="background:var(--green)"></i> Green — high</span>
+        <span><i class="sw" style="background:var(--amber)"></i> Yellow — medium</span>
+        <span><i class="sw" style="background:var(--red)"></i> Red — pass</span>
+      </div>
+      <div class="cand-list" id="candList" style="margin-top:16px"></div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Estimates only — always verify ARV, rehab scope and comps before making an offer. The 70% rule is a screening tool, not an appraisal.<br>
+    Flip Analyzer · Phase 1 (manual numbers). Phase 2 adds automatic listing + sold-comp pull and real city scanning.
+  </p>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<span class="sr" id="live" aria-live="polite"></span>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const money = n => (n<0?"-$":"$")+Math.abs(Math.round(n)).toLocaleString("en-US");
+const pct = n => (isFinite(n)?n.toFixed(1):"0.0")+"%";
+const num = el => { const v = parseFloat(el.value); return isFinite(v)?v:0; };
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
+const LS = {
+  get(k,f){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):f; }catch(e){ return f; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- core scoring (shared) ---------- */
+function evaluate({arv, price, rehab, otherPct, rulePct, fullyEvaluated}){
+  const other = arv * (otherPct/100);
+  const mao = arv*(rulePct/100) - rehab;
+  const profit = arv - price - rehab - other;
+  const totalIn = price + rehab;
+  const roi = totalIn>0 ? profit/totalIn*100 : 0;
+  const margin = arv>0 ? profit/arv*100 : 0;
+  const passes = price>0 && price<=mao;
+
+  let grade;
+  if(arv<=0 || price<=0) grade="incomplete";
+  else if(profit<=0 || margin<10 || price>mao*1.10) grade="red";
+  else if(margin<18 || price>mao) grade="yellow";
+  else grade="green";
+
+  let gold=false;
+  if(fullyEvaluated && grade==="green" && margin>=25 && roi>=25 && price<=mao*0.95){ gold=true; grade="gold"; }
+  return {arv,price,rehab,other,mao,profit,roi,margin,passes,grade};
+}
+
+const GRADE_INFO = {
+  gold:   {t:"Gold",   label:"GOLD",   cls:"g-gold",   h:"Exceptional — move fast.",        p:"Clears the rule with room to spare and top-tier margins after a full comp-backed eval. This is a jump-on-it deal."},
+  green:  {t:"Green",  label:"HIGH",   cls:"g-green",  h:"Strong flip candidate.",          p:"Passes the rule with a healthy profit margin. Worth pursuing and verifying."},
+  yellow: {t:"Yellow", label:"MEDIUM", cls:"g-yellow", h:"Marginal — negotiate.",           p:"Thin on margin or just over the rule line. Could work at a lower price or tighter rehab."},
+  red:    {t:"Red",    label:"PASS",   cls:"g-red",    h:"Not a flip at these numbers.",    p:"Fails the rule or leaves too little profit for the risk. Pass unless the inputs change."},
+  incomplete:{t:"—",   label:"NEEDS DATA", cls:"g-yellow", h:"Add a price and an ARV.",      p:"Enter the asking price plus comps (or an ARV override) to grade this deal."}
+};
+
+/* =====================================================================
+   ANALYZING MACHINE
+   ===================================================================== */
+let comps = [];
+function compRow(c={price:"",sqft:""}){
+  const row = document.createElement("div");
+  row.className="comp-row";
+  row.innerHTML =
+    `<div class="prefix"><span>$</span><input type="number" class="c-price" min="0" step="1000" placeholder="sold price" value="${c.price}"></div>`+
+    `<input type="number" class="c-sqft" min="0" step="10" placeholder="sq ft" value="${c.sqft}">`+
+    `<button class="del" type="button" title="Remove" aria-label="Remove comp">✕</button>`;
+  row.querySelector(".del").onclick = ()=>{ row.remove(); recalc(); };
+  row.querySelectorAll("input").forEach(i=>i.addEventListener("input",recalc));
+  return row;
+}
+function addComp(c){ $("#comps").appendChild(compRow(c)); }
+function readComps(){
+  return $$("#comps .comp-row").map(r=>({
+    price:parseFloat(r.querySelector(".c-price").value)||0,
+    sqft:parseFloat(r.querySelector(".c-sqft").value)||0
+  })).filter(c=>c.price>0 && c.sqft>0);
+}
+function arvFromComps(subjectSqft){
+  const list = readComps();
+  if(!list.length || subjectSqft<=0) return {arv:0, psf:0, n:list.length};
+  const psf = list.reduce((a,c)=>a + c.price/c.sqft, 0)/list.length;
+  return {arv: psf*subjectSqft, psf, n:list.length};
+}
+
+function recalc(){
+  const sqft = num($("#f-sqft"));
+  const comp = arvFromComps(sqft);
+  $("#arvFromComps").textContent = comp.arv>0 ? money(comp.arv)+"  ·  "+money(comp.psf)+"/ft" : "$0";
+
+  const override = num($("#f-arv"));
+  const arv = override>0 ? override : comp.arv;
+  const price = num($("#f-price"));
+  const rehab = num($("#f-rehab"));
+  const rulePct = num($("#f-rule"))||70;
+  const otherPct = num($("#f-costs"));
+  const fullyEvaluated = comp.n>=2 && rehab>0 && arv>0; // comp-backed + rehab = eligible for gold
+
+  const r = evaluate({arv,price,rehab,otherPct,rulePct,fullyEvaluated});
+  renderResults(r, {sqft, compN:comp.n, rulePct, fullyEvaluated});
+}
+
+function renderResults(r, ctx){
+  const box = $("#results");
+  if(r.grade==="incomplete"){
+    box.innerHTML = `<div class="card verdict"><div class="empty">
+      <div class="big">⚙️</div><h3>Waiting on the numbers</h3>
+      <p>Enter an asking price and either add two sold comps or type an ARV override. The grade and the full breakdown appear here.</p>
+    </div></div>`;
+    return;
+  }
+  const g = GRADE_INFO[r.grade];
+  const goldLocked = !ctx.fullyEvaluated && r.grade==="green";
+  box.innerHTML = `
+    <div class="card verdict">
+      <div class="grade-banner">
+        <div class="grade-pill ${g.cls}"><span class="g">${r.grade==="gold"?"★":g.t[0]}</span><span class="t">${g.label}</span></div>
+        <div class="grade-msg"><h3>${g.h}</h3><p>${g.p}</p></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Projected profit</div><div class="v ${r.profit>=0?'pos':'neg'}">${money(r.profit)}</div><div class="note">after rehab + ${pct(num($("#f-costs")))} costs</div></div>
+        <div class="tile"><div class="k">ROI on cash in</div><div class="v ${r.roi>=0?'pos':'neg'}">${pct(r.roi)}</div><div class="note">profit ÷ (price + rehab)</div></div>
+        <div class="tile"><div class="k">Max offer (${ctx.rulePct}% rule)</div><div class="v">${money(r.mao)}</div><div class="note">ARV×${ctx.rulePct}% − rehab</div></div>
+        <div class="tile"><div class="k">Margin on ARV</div><div class="v">${pct(r.margin)}</div><div class="note">profit ÷ resale value</div></div>
+      </div>
+      <div class="rule-check ${r.passes?'ok':'bad'}">
+        <span class="mark">${r.passes?'✓':'✕'}</span>
+        <div>The ${ctx.rulePct}% rule says pay at most <b>${money(r.mao)}</b>. You're ${r.passes?'at or under that by':'over it by'} <b>${money(Math.abs(r.mao-r.price))}</b>.</div>
+      </div>
+      <div class="breakdown">
+        <h4>How it pencils out</h4>
+        <div class="ln"><span>After-Repair Value (ARV)</span><span class="num">${money(r.arv)}</span></div>
+        <div class="ln"><span>− Purchase price</span><span class="num">${money(r.price)}</span></div>
+        <div class="ln"><span>− Rehab</span><span class="num">${money(r.rehab)}</span></div>
+        <div class="ln"><span>− Holding / closing / selling</span><span class="num">${money(r.other)}</span></div>
+        <div class="ln total"><span>= Projected profit</span><span class="num ${r.profit>=0?'':'neg'}" style="color:${r.profit>=0?'var(--green)':'var(--red)'}">${money(r.profit)}</span></div>
+      </div>
+      ${goldLocked?`<div class="rule-check" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--border);margin-top:0">
+        <span class="mark">🔒</span><div>Gold is within reach. Add <b>at least 2 sold comps</b> and a rehab figure for a full evaluation — then strong deals can be promoted to gold.</div></div>`:``}
+      <div class="save-row">
+        <button class="btn-ghost" id="saveToList" type="button">↓ Save to shortlist</button>
+        <button class="btn-ghost" id="copyBtn" type="button">Copy summary</button>
+      </div>
+    </div>`;
+  $("#saveToList").onclick = saveCurrentToShortlist;
+  $("#copyBtn").onclick = copySummary;
+  window._lastResult = r;
+}
+
+function currentDeal(){
+  const sqft = num($("#f-sqft"));
+  const comp = arvFromComps(sqft);
+  const override = num($("#f-arv"));
+  return {
+    name: $("#f-addr").value.trim() || $("#f-link").value.trim() || "Untitled house",
+    link: $("#f-link").value.trim(),
+    price: num($("#f-price")), sqft,
+    rehab: num($("#f-rehab")),
+    arv: override>0?override:comp.arv,
+    rulePct: num($("#f-rule"))||70,
+    otherPct: num($("#f-costs")),
+    fullyEvaluated: comp.n>=2 && num($("#f-rehab"))>0 && (override>0||comp.arv>0),
+    psf: comp.psf
+  };
+}
+
+function copySummary(){
+  const d = currentDeal();
+  const r = evaluate(d);
+  const txt =
+`FLIP ANALYSIS — ${d.name}
+Grade: ${GRADE_INFO[r.grade].t.toUpperCase()}
+Asking: ${money(d.price)}   ARV: ${money(d.arv)}   Rehab: ${money(d.rehab)}
+Max offer (${d.rulePct}% rule): ${money(r.mao)}  (${r.passes?"PASS":"OVER"})
+Projected profit: ${money(r.profit)}   ROI: ${pct(r.roi)}   Margin: ${pct(r.margin)}
+${d.link||""}`;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast("Summary copied")).catch(()=>fallbackCopy(txt));
+  } else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("Summary copied"); }catch(e){ toast("Press Ctrl+C to copy"); }
+  ta.remove();
+}
+
+function resetAnalyzer(){
+  ["f-link","f-addr","f-price","f-sqft","f-rehab","f-arv"].forEach(id=>$("#"+id).value="");
+  $("#f-rule").value=70; $("#f-costs").value=10;
+  $$("#rehabChips .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+  $("#comps").innerHTML=""; addComp(); addComp();
+  recalc();
+}
+
+/* =====================================================================
+   SCANNER / SHORTLIST
+   ===================================================================== */
+let candidates = [];
+let qRehabPsf = 40;
+
+function gradeCandidate(c){
+  const arv = c.sqft>0 && c.psf>0 ? c.sqft*c.psf : (c.arv||0);
+  const rehab = c.rehab!=null ? c.rehab : (c.sqft*qRehabPsf);
+  const r = evaluate({arv, price:c.price, rehab, otherPct:10, rulePct:70, fullyEvaluated:!!c.fullyEvaluated});
+  return r;
+}
+
+function renderCandidates(){
+  const list = $("#candList");
+  $("#candCount").textContent = candidates.length?`(${candidates.length})`:"";
+  if(!candidates.length){
+    list.innerHTML = `<div class="empty"><div class="big">🔎</div><h3>No candidates yet</h3>
+      <p>Add houses above for a quick triage, or send a graded deal here from the Analyzing Machine.</p></div>`;
+    return;
+  }
+  const order = {gold:0,green:1,yellow:2,red:3,incomplete:4};
+  const sorted = [...candidates].sort((a,b)=>order[a._r.grade]-order[b._r.grade] || b._r.profit-a._r.profit);
+  list.innerHTML = sorted.map(c=>{
+    const r=c._r, g=GRADE_INFO[r.grade];
+    return `<div class="cand ${r.grade}">
+      <div class="badge ${g.cls}">${r.grade==="gold"?"★ GOLD":g.label}</div>
+      <div class="info">
+        <div class="name">${c.link?`<a href="${esc(c.link)}" target="_blank" rel="noopener">${esc(c.name)}</a>`:esc(c.name)}${c.example?'<span class="tag-ex">example</span>':''}</div>
+        <div class="meta">
+          <span>Ask <span class="num">${money(c.price)}</span></span>
+          <span>ARV <span class="num">${money(r.arv)}</span></span>
+          <span>Profit <span class="num" style="color:${r.profit>=0?'var(--green)':'var(--red)'}">${money(r.profit)}</span></span>
+          <span>Margin <span class="num">${pct(r.margin)}</span></span>
+        </div>
+      </div>
+      <div class="acts">
+        <button class="go" type="button" data-id="${c.id}" data-act="open">Analyze fully →</button>
+        <button type="button" data-id="${c.id}" data-act="del" title="Remove" aria-label="Remove">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+  list.querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{ const id=b.dataset.id;
+      if(b.dataset.act==="del"){ candidates=candidates.filter(x=>x.id!==id); saveCands(); renderCandidates(); }
+      else sendToAnalyzer(id);
+    };
+  });
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function addCandidate(c){
+  c.id = c.id || ("c"+Date.now()+Math.random().toString(36).slice(2,6));
+  c._r = gradeCandidate(c);
+  candidates.push(c); saveCands(); renderCandidates();
+}
+function saveCands(){ LS.set("fa_cands", candidates.map(({_r,...c})=>c)); }
+function loadCands(){ candidates = LS.get("fa_cands",null); if(candidates===null){ candidates=SEED.slice(); } candidates.forEach(c=>c._r=gradeCandidate(c)); }
+
+function sendToAnalyzer(id){
+  const c = candidates.find(x=>x.id===id); if(!c) return;
+  $("#f-link").value = c.link||"";
+  $("#f-addr").value = c.name&&c.name!=="Untitled house"?c.name:"";
+  $("#f-price").value = c.price||"";
+  $("#f-sqft").value = c.sqft||"";
+  // seed rehab from the candidate's assumption
+  const rehab = c.rehab!=null?c.rehab:Math.round((c.sqft||0)*qRehabPsf);
+  $("#f-rehab").value = rehab||"";
+  $("#f-arv").value = "";
+  // seed one comp implied by the area $/ft so the ARV isn't empty
+  $("#comps").innerHTML="";
+  if(c.psf>0 && c.sqft>0){ addComp({price:Math.round(c.psf*c.sqft),sqft:c.sqft}); addComp(); }
+  else { addComp(); addComp(); }
+  switchTab("analyze");
+  recalc();
+  window.scrollTo({top:0,behavior:"smooth"});
+  toast("Loaded into the Analyzing Machine — add real comps to earn gold");
+}
+
+function saveCurrentToShortlist(){
+  const d = currentDeal();
+  if(d.price<=0){ toast("Add a price first"); return; }
+  const r = evaluate(d);
+  addCandidate({
+    name:d.name, link:d.link, price:d.price, sqft:d.sqft,
+    arv:d.arv, rehab:d.rehab, psf:d.sqft>0?d.arv/d.sqft:0,
+    fullyEvaluated:d.fullyEvaluated
+  });
+  toast(r.grade==="gold"?"★ Saved as GOLD to your shortlist":"Saved to shortlist as "+GRADE_INFO[r.grade].t);
+  switchTab("scan");
+}
+
+/* ---------- seed examples (clearly marked) ---------- */
+const SEED = [
+  {id:"ex1",example:true,name:"41 Larchmont Dr (example)",link:"",price:150000,sqft:1400,psf:215,rehab:42000,fullyEvaluated:false},
+  {id:"ex2",example:true,name:"7 Chestnut Ct (example)",link:"",price:165000,sqft:1500,psf:185,rehab:40000,fullyEvaluated:false},
+  {id:"ex3",example:true,name:"930 Harbor View (example)",link:"",price:220000,sqft:1800,psf:175,rehab:70000,fullyEvaluated:false}
+];
+
+/* =====================================================================
+   WIRING
+   ===================================================================== */
+function switchTab(which){
+  const map={analyze:["tab-analyze","panel-analyze"],scan:["tab-scan","panel-scan"]};
+  for(const k in map){
+    const sel = k===which;
+    $("#"+map[k][0]).setAttribute("aria-selected",sel);
+    $("#"+map[k][1]).hidden = !sel;
+  }
+  try{ location.hash = which; }catch(e){}
+}
+$("#tab-analyze").onclick=()=>switchTab("analyze");
+$("#tab-scan").onclick=()=>switchTab("scan");
+
+// rehab chips (analyzer)
+$$("#rehabChips .chip").forEach(chip=>{
+  chip.onclick=()=>{
+    const sq=num($("#f-sqft"));
+    $$("#rehabChips .chip").forEach(c=>c.setAttribute("aria-pressed",c===chip?"true":"false"));
+    if(sq>0){ $("#f-rehab").value = Math.round(sq*parseFloat(chip.dataset.psf)); recalc(); }
+    else toast("Enter the square footage first");
+  };
+});
+// rehab chips (scanner quick-add)
+$$("#qRehabChips .chip").forEach(chip=>{
+  chip.onclick=()=>{ $$("#qRehabChips .chip").forEach(c=>c.setAttribute("aria-pressed",c===chip?"true":"false")); qRehabPsf=parseFloat(chip.dataset.psf); };
+});
+
+$("#addComp").onclick=()=>addComp();
+$("#resetBtn").onclick=resetAnalyzer;
+["f-link","f-addr","f-price","f-sqft","f-rehab","f-arv","f-rule","f-costs"].forEach(id=>$("#"+id).addEventListener("input",recalc));
+
+$("#addCand").onclick=()=>{
+  const name=$("#q-name").value.trim();
+  const price=num($("#q-price")), sqft=num($("#q-sqft")), psf=num($("#q-psf"));
+  if(price<=0){ toast("Add a price"); return; }
+  const isLink=/^https?:\/\//i.test(name);
+  addCandidate({name:name|| (isLink?name:"Untitled house"), link:isLink?name:"", price, sqft, psf, rehab:sqft*qRehabPsf, fullyEvaluated:false});
+  $("#q-name").value=$("#q-price").value=$("#q-sqft").value=$("#q-psf").value="";
+  toast("Added to shortlist");
+};
+$("#clearCands").onclick=()=>{ candidates=[]; saveCands(); renderCandidates(); toast("Shortlist cleared"); };
+$("#scanBtn").onclick=()=>toast("City auto-scan unlocks in Phase 2 with the data feed");
+
+// theme toggle
+(function(){
+  const saved = LS.get("fa_theme",null);
+  if(saved) document.documentElement.setAttribute("data-theme",saved);
+  $("#themeBtn").onclick=()=>{
+    const cur = document.documentElement.getAttribute("data-theme");
+    const sysDark = window.matchMedia("(prefers-color-scheme:dark)").matches;
+    const next = cur ? (cur==="dark"?"light":"dark") : (sysDark?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next); LS.set("fa_theme",next);
+  };
+})();
+
+/* ---------- boot ---------- */
+function boot(){
+  // analyzer opens with a realistic worked example (grades green)
+  $("#f-addr").value="24 Ridgeway Ln (example)";
+  $("#f-price").value=165000; $("#f-sqft").value=1450;
+  addComp({price:315000,sqft:1500}); addComp({price:340000,sqft:1620});
+  $("#f-rehab").value=45000;
+  recalc();
+
+  loadCands(); renderCandidates();
+
+  const h=(location.hash||"").replace("#","");
+  if(h==="scan"||h==="analyze") switchTab(h); else switchTab("analyze");
+}
+boot();
+</script>
+
+</body></html>
