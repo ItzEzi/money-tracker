@@ -477,6 +477,13 @@ html.in-tool .topbar,html.in-tool #main,html.in-tool .mobile-nav,html.in-tool #p
 .st-mini{margin:4px 10px 10px;padding:0;border-radius:12px;overflow:hidden;background:#0f0f0f}
 .hz-frame{display:block;width:100%;height:calc(100dvh - 120px - env(safe-area-inset-top));border:0;border-radius:16px;background:#0d1218}
 </style>
+<style>
+html.swiping #portal{display:block!important;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;animation:none!important}
+html.swiping .topbar,html.swiping #main,html.swiping #tool-app,html.swiping #notes-app .nt-wrap{position:relative;z-index:2}
+html.swiping .mobile-nav,html.swiping #notes-app .nt-bar{z-index:3}
+.swipe-sheet{position:fixed;top:0;left:0;width:100vw;height:100lvh;z-index:1;pointer-events:none;box-shadow:-14px 0 32px #0009}
+html.swiping body{overflow-x:hidden}
+</style>
 </head>
 <body>
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="hubg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5774ff"/><stop offset=".55" stop-color="#8850f6"/><stop offset="1" stop-color="#ed91c0"/></linearGradient></defs></svg>
@@ -924,17 +931,28 @@ function renderStocks(){const L=X.data.stocks;
 setInterval(()=>{if(T.cur==='countdown'&&document.visibilityState==='visible'&&!document.activeElement.closest('#cd-form'))renderCountdown();toolMeta();},60e3);
 toolMeta();
 
-/* Swipe from the left edge = back (like iPhone) */
-(function(){let sx=0,sy=0,on=false,dx=0,el=null;const root=document.documentElement;
- function where(){if(root.classList.contains('locked')||root.classList.contains('splashing')||root.classList.contains('at-portal'))return null;if(document.querySelector('dialog[open]'))return null;const tv=document.getElementById('tube-view');if(tv&&!tv.hidden)return null;if(root.classList.contains('in-tool'))return document.getElementById('tool-app');if(root.classList.contains('in-notes'))return N.cur?document.getElementById('nt-editor'):document.getElementById('notes-app');return document.getElementById('main');}
- function back(){if(root.classList.contains('in-tool')){closeTool();return;}if(root.classList.contains('in-notes')){if(N.cur)closeNote();else toPortal();return;}toPortal();}
- document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(t.clientX>28)return;el=where();if(!el)return;on=true;sx=t.clientX;sy=t.clientY;dx=0;},{passive:true});
- document.addEventListener('touchmove',e=>{if(!on)return;const t=e.touches[0];dx=t.clientX-sx;const dy=Math.abs(t.clientY-sy);if(dy>40&&dy>dx){on=false;el.style.transform='';el.style.transition='';return;}if(dx>0){el.style.transition='none';el.style.transform='translateX('+Math.min(dx,window.innerWidth)+'px)';}},{passive:true});
- document.addEventListener('touchend',()=>{if(!on)return;on=false;const go=dx>window.innerWidth*0.28;el.style.transition='transform .22s ease';el.style.transform=go?'translateX('+window.innerWidth+'px)':'';const e2=el;setTimeout(()=>{e2.style.transition='';e2.style.transform='';if(go)back();},go?200:240);},{passive:true});
- document.addEventListener('touchcancel',()=>{if(!on)return;on=false;el.style.transition='';el.style.transform='';},{passive:true});
+/* Swipe from the left edge = back (like iPhone): the page slides off, the Portal slides in underneath */
+(function(){const root=document.documentElement,W=()=>window.innerWidth;let st=null,raf=0;
+ const q=sel=>document.querySelector(sel);
+ function setup(){if(root.classList.contains('locked')||root.classList.contains('splashing')||root.classList.contains('at-portal'))return null;if(document.querySelector('dialog[open]'))return null;const tv=q('#tube-view');if(tv&&!tv.hidden)return null;
+  if(root.classList.contains('in-notes')&&N.cur)return {kind:'note',moving:[q('#nt-editor')],under:null};
+  if(root.classList.contains('in-notes'))return {kind:'notes',moving:[q('#notes-app .nt-wrap'),q('#notes-app .nt-bar')],under:'portal'};
+  if(root.classList.contains('in-tool'))return {kind:'tool',moving:[q('#tool-app')],under:T.stock?null:'portal'};
+  return {kind:'tracker',moving:[q('.topbar'),q('#main'),q('.mobile-nav')].filter(Boolean),under:'portal'};}
+ function begin(){const s2=st;s2.on=true;if(s2.under){s2.sheet=document.createElement('div');s2.sheet.className='swipe-sheet';s2.sheet.style.background=getComputedStyle(document.body).backgroundColor||'#100e18';document.body.appendChild(s2.sheet);root.classList.add('swiping');s2.portal=q('#portal');}
+  s2.all=[...s2.moving,s2.sheet].filter(Boolean);s2.all.forEach(e=>{e.style.willChange='transform';e.style.transition='none';});if(s2.portal){s2.portal.style.willChange='transform';s2.portal.style.transition='none';}}
+ function paint(){raf=0;if(!st||!st.on)return;const x=Math.max(0,Math.min(st.dx,W()));const tr='translate3d('+x+'px,0,0)';st.all.forEach(e=>e.style.transform=tr);if(st.portal){const p=x/W();st.portal.style.transform='translate3d('+(-28*(1-p))+'%,0,0)';st.portal.style.opacity=(0.55+0.45*p).toFixed(3);}}
+ function cleanup(s2){s2.all&&s2.all.forEach(e=>{e.style.transition='';e.style.transform='';e.style.willChange='';});if(s2.portal){s2.portal.style.transition='';s2.portal.style.transform='';s2.portal.style.opacity='';s2.portal.style.willChange='';}if(s2.sheet)s2.sheet.remove();root.classList.remove('swiping');}
+ function back(kind){if(kind==='note'){closeNote();return;}if(kind==='tool'){closeTool();return;}toPortal();}
+ document.addEventListener('touchstart',e=>{if(st||e.touches.length!==1)return;const t=e.touches[0];if(t.clientX>24)return;const cfg=setup();if(!cfg)return;st={...cfg,sx:t.clientX,sy:t.clientY,dx:0,on:false,lastX:t.clientX,lastT:e.timeStamp,v:0};},{passive:true});
+ document.addEventListener('touchmove',e=>{if(!st)return;const t=e.touches[0];const dx=t.clientX-st.sx,dy=Math.abs(t.clientY-st.sy);if(!st.on){if(dy>10&&dy>Math.abs(dx)){st=null;return;}if(dx<8)return;begin();}const dt=e.timeStamp-st.lastT;if(dt>0)st.v=(t.clientX-st.lastX)/dt;st.lastX=t.clientX;st.lastT=e.timeStamp;st.dx=dx;if(!raf)raf=requestAnimationFrame(paint);},{passive:true});
+ function end(){if(!st)return;const s2=st;st=null;if(!s2.on)return;cancelAnimationFrame(raf);raf=0;const go=s2.dx>W()*0.4||(s2.v>0.45&&s2.dx>30);const dur=Math.round(go?Math.max(140,Math.min(300,(W()-s2.dx)/Math.max(s2.v,1.2))):220);const ease='cubic-bezier(.2,.8,.2,1)';
+  s2.all.forEach(e=>{e.style.transition='transform '+dur+'ms '+ease;e.style.transform='translate3d('+(go?W():0)+'px,0,0)';});if(s2.portal){s2.portal.style.transition='transform '+dur+'ms '+ease+',opacity '+dur+'ms '+ease;s2.portal.style.transform=go?'translate3d(0,0,0)':'translate3d(-28%,0,0)';s2.portal.style.opacity=go?'1':'0.55';}
+  setTimeout(()=>{if(go){back(s2.kind);}requestAnimationFrame(()=>cleanup(s2));},dur+20);}
+ document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',end,{passive:true});
 })();
 
-const APP_V='20261015-recur1';
+const APP_V='20261015-swipe2';
 function checkUpdate(){if(N.cur||T.cur||document.querySelector('dialog[open]'))return;fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.v||j.v===APP_V)return;let seen=null;try{seen=sessionStorage.getItem('upd-'+j.v)}catch(e){}if(seen)return;try{sessionStorage.setItem('upd-'+j.v,'1')}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(j.v));}).catch(()=>{});}
 checkUpdate();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
 bootHub();
